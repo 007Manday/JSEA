@@ -2,6 +2,9 @@
 
 Usage: python tools/convert_to_heritage.py TEMPLATE.docx SRC_DIR OUT_DIR
 
+All converted documents are kept together in Heritage-JSEA/, e.g.
+    python tools/convert_to_heritage.py tools/heritage_template.docx LAB-301-Sample-Preparation Heritage-JSEA
+
 TEMPLATE is a filled Heritage JSEA/SWMS form (HM-MMM-WHS-FRM-031-R03). Its
 header block, risk matrix, SOP list and sign-on pages are kept; the work
 activity details, ticks and job-step rows are replaced from each source JSEA.
