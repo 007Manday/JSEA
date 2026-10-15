@@ -142,8 +142,12 @@ def read_source(path):
         })
     ppe = section_lines(d, '5', '6')
     training = section_lines(d, '8', '9')
-    full = '\n'.join(p.text for p in d.paragraphs) + '\n' + '\n'.join(
-        c.text for t in d.tables for r in t.rows for c in r.cells)
+    # Keyword text is task-specific content only: the abbreviations table and
+    # training section are shared boilerplate across every JSEA and mention
+    # cyanide and height work whether or not the task involves them.
+    task_tables = [t for t in d.tables if t.rows[0].cells[0].text in ('Job step', 'Tag / point')]
+    full = '\n'.join([title] + section_lines(d, '1', '2') + ppe + section_lines(d, '6', '7')) + '\n' + \
+        '\n'.join(c.text for t in task_tables for r in t.rows for c in r.cells)
     return {'meta': meta, 'title': title, 'steps': steps, 'ppe': ppe,
             'training': training[1:], 'text': full}
 
@@ -263,7 +267,15 @@ def convert(template, src_path, out_path):
     # Training (rows 26-30)
     c = R(26); yes_no((c[3], c[4]), True)
     c = R(27); yes_no((c[3], c[4]), True)
-    other = [t.rstrip('.') for t in s['training'] if not has(t, 'site induction')][:3]
+    def training_applies(t):
+        if has(t, 'site induction'):
+            return False
+        if has(t, 'cyanide'):
+            return has(text, 'cyanide')
+        if has(t, 'height'):
+            return hrw['Falling from Height']
+        return True
+    other = [t.rstrip('.') for t in s['training'] if training_applies(t)][:3]
     for i, ri in enumerate((28, 29, 30)):
         c = R(ri)
         if i < len(other):
