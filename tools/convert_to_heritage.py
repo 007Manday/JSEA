@@ -5,7 +5,7 @@ Usage: python tools/convert_to_heritage.py TEMPLATE.docx SRC_DIR OUT_DIR
 All converted documents are kept together in Heritage-JSEA/, e.g.
     python tools/convert_to_heritage.py tools/heritage_template.docx LAB-301-Sample-Preparation Heritage-JSEA
 
-TEMPLATE is a filled Heritage JSEA/SWMS form (HM-MMM-WHS-FRM-031-R03). Its
+TEMPLATE is a filled Heritage JSEA/SWMS form (HM-MMM-WHS-FRM-031). Its
 header block, risk matrix, SOP list and sign-on pages are kept; the work
 activity details, ticks and job-step rows are replaced from each source JSEA.
 
@@ -22,6 +22,10 @@ from datetime import datetime
 
 import docx
 from docx.oxml.ns import qn
+
+# Revision shown in the JSEA/SWMS number and the page footer
+REVISION = 'R01'
+REVISION_DATE = '15/10/2026'
 
 # Heritage 5x5 matrix, [likelihood][consequence]
 MATRIX = {
@@ -91,6 +95,28 @@ def set_text(cell, text, size=None):
                 el = rpr.find(qn(tag))
                 if el is not None:
                     el.set(qn('w:val'), str(size))
+
+
+def replace_in_paragraphs(root, old, new):
+    """Replace text that Word may have split across several runs."""
+    for p in root.iter(qn('w:p')):
+        nodes = list(p.iter(qn('w:t')))
+        joined = ''.join(t.text or '' for t in nodes)
+        while old in joined:
+            start = joined.index(old)
+            end = start + len(old)
+            pos = 0
+            for t in nodes:
+                text = t.text or ''
+                a, b = pos, pos + len(text)
+                pos = b
+                if b <= start or a >= end:
+                    continue
+                keep_left = text[:max(0, start - a)]
+                keep_right = text[max(0, end - a):] if end < b else ''
+                insert = new if a <= start < b else ''
+                t.text = keep_left + insert + keep_right
+            joined = ''.join(t.text or '' for t in nodes)
 
 
 def set_check(cell, on):
@@ -210,7 +236,10 @@ def convert(template, src_path, out_path):
     set_text(R(1)[3], '')
     set_text(R(1)[5], '12 Months')
     set_text(R(2)[1], f"{s['title']} ({m['Area']})")
-    set_text(R(2)[3], f'HM-MMM-WHS-FRM-031-R03-{num}')
+    set_text(R(2)[3], f'HM-MMM-WHS-FRM-031-{REVISION}-{num}')
+    for section in doc.sections:
+        replace_in_paragraphs(section.footer._element, 'R03', REVISION)
+        replace_in_paragraphs(section.footer._element, '01/12/2025', REVISION_DATE)
 
     # PPE ticks: boots, gloves, hard hat & glasses, hearing, hi-vis, dust mask,
     # harness, isolation, hand washing, double eye protection
