@@ -25,6 +25,7 @@ from docx.oxml.ns import qn
 
 # Revision shown in the JSEA/SWMS number and the page footer
 REVISION = 'R01'
+REVISION_DATE = '15/10/2026'
 
 # Heritage 5x5 matrix, [likelihood][consequence]
 MATRIX = {
@@ -238,6 +239,7 @@ def convert(template, src_path, out_path):
     set_text(R(2)[3], f'HM-MMM-WHS-FRM-031-{REVISION}-{num}')
     for section in doc.sections:
         replace_in_paragraphs(section.footer._element, 'R03', REVISION)
+        replace_in_paragraphs(section.footer._element, '01/12/2025', REVISION_DATE)
 
     # PPE ticks: boots, gloves, hard hat & glasses, hearing, hi-vis, dust mask,
     # harness, isolation, hand washing, double eye protection
